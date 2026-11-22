@@ -2,7 +2,7 @@ name: daily-report
 
 on:
   schedule:
-    - cron: "0 23 * * *"   # 23:00 UTC = 06:00 Vietnam time next day (GitHub may start it a few min late)
+    - cron: "7 23 * * *"   # 23:07 UTC = 06:07 Vietnam time next day (off the busy :00 mark)
   workflow_dispatch:         # "Run workflow" button for manual runs
 
 permissions:

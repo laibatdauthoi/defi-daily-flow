@@ -77,7 +77,7 @@ def links(r):
 
 def markdown(r, lang, insight=None, insight_note=None):
     t, p, m = T[lang], r["prices"], r["market"]
-    L = [f"# 📡 DeFi Daily Flow · {r['day']}", f"_{t['subtitle']}_", ""]
+    L = [f"# 📡 DeFi Daily Flow · {_date(r, lang)}", f"_{t['subtitle']}_", ""]
     L.append(f"**{t['prices']}:** BTC {sp(p['BTC']['pct'])} · ETH {sp(p['ETH']['pct'])}  ")
     L.append(f"**{t['market']}:** {t['fees']} {usd(m['fees_7d'])} ({sp(m['fees_pct'])}) · "
              f"{t['stables']} {usd(m['stables'])} ({sd(m['stables_delta'])})")
@@ -116,7 +116,9 @@ def markdown(r, lang, insight=None, insight_note=None):
         L.append(f"_{t['no_insight']}: {md_text((insight_note or '')[:150])}_")
 
     fetched, vn = _times(r)
-    L += ["", f"_{t['fetched']} {fetched.strftime('%Y-%m-%d %H:%M')} UTC ({vn.strftime('%H:%M')} {t['vn']}) · DeFiLlama_"]
+    when = (f"{fetched.strftime('%Y-%m-%d %H:%M')} UTC" if lang == "en"
+            else f"{vn.strftime('%Y-%m-%d %H:%M')} {t['vn']}")
+    L += ["", f"_{t['fetched']} {when} · DeFiLlama_"]
     L.append(f"_{t['disclaimer']}_")
     return "\n".join(L)
 
@@ -124,6 +126,12 @@ def markdown(r, lang, insight=None, insight_note=None):
 def _times(r):
     fetched = datetime.fromisoformat(r["fetched_at"])
     return fetched, fetched.astimezone(timezone(timedelta(hours=7)))
+
+
+def _date(r, lang):
+    """English version dated in UTC, Vietnamese version in Vietnam time."""
+    fetched, vn = _times(r)
+    return (fetched if lang == "en" else vn).strftime("%Y-%m-%d")
 
 
 def sources_message(r):
@@ -159,7 +167,7 @@ def build_messages(r, insight=None, insight_note=None):
     out = []
     for lang, flag in (("en", "🇬🇧 English"), ("vi", "🇻🇳 Tiếng Việt")):
         blocks = _code_blocks(markdown(r, lang, insight, insight_note))
-        blocks[0] = f"<b>{flag}</b> · DeFi Daily Flow {r['day']}\n" + blocks[0]
+        blocks[0] = f"<b>{flag}</b> · DeFi Daily Flow {_date(r, lang)}\n" + blocks[0]
         out += blocks
     return out + [sources_message(r)]
 
