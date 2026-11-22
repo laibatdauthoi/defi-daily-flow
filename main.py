@@ -9,6 +9,7 @@ import sqlite3
 import sys
 import traceback
 
+import chart
 import db
 import notify
 from analyze import analyze, to_text
@@ -21,11 +22,24 @@ DB_PATH = os.environ.get("DEFI_FLOW_DB", os.path.join(HERE, "data", "defi_daily_
 
 
 def deliver(messages, dry_run):
+    """Each item is HTML text, or ("photo", path, caption)."""
     for m in messages:
         if dry_run:
-            print(m, "\n" + "=" * 60)
+            print(f"[ảnh] {m[1]}" if isinstance(m, tuple) else m, "\n" + "=" * 60)
+        elif isinstance(m, tuple):
+            notify.send_photo(m[1], m[2])
         else:
             notify.send(m)
+
+
+def make_chart(r):
+    """The chart is a bonus: if it fails, the text report still goes out."""
+    try:
+        path = chart.render(r, os.path.join(os.path.dirname(DB_PATH), "chart.png"))
+        return ("photo", path, f"📊 DeFi fees by category · {r['day']}") if path else None
+    except Exception as err:
+        print(f"Không vẽ được biểu đồ: {type(err).__name__}: {err}", file=sys.stderr)
+        return None
 
 
 def run(dry_run, no_fetch):
@@ -39,7 +53,11 @@ def run(dry_run, no_fetch):
     r = analyze(con)
     ins, note = write_insight(to_text(r, "en"))
     print(f"Haiku: {note}", file=sys.stderr)
-    deliver(build_messages(r, ins, note), dry_run)
+    messages = build_messages(r, ins, note)            # EN, VI, ..., Sources (last)
+    photo = make_chart(r)
+    if photo:
+        messages.insert(len(messages) - 1, photo)      # chart right before Sources
+    deliver(messages, dry_run)
 
 
 def main():

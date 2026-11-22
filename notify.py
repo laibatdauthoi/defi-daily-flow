@@ -28,10 +28,25 @@ def split(text, limit=LIMIT):
     return parts + ([cur] if cur else [])
 
 
-def send(text):
+def _creds():
     token, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat:
         raise RuntimeError("Thiếu TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID")
+    return token, chat
+
+
+def send_photo(path, caption=""):
+    token, chat = _creds()
+    with open(path, "rb") as f:
+        r = requests.post(f"https://api.telegram.org/bot{token}/sendPhoto",
+                          data={"chat_id": chat, "caption": caption[:1024], "parse_mode": "HTML"},
+                          files={"photo": f}, timeout=60)
+    if r.status_code != 200:
+        raise RuntimeError(f"Telegram HTTP {r.status_code}: {r.text[:300]}")
+
+
+def send(text):
+    token, chat = _creds()
     for part in split(text):
         r = requests.post(
             f"https://api.telegram.org/bot{token}/sendMessage",

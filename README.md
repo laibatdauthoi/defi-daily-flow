@@ -28,5 +28,6 @@ python notify.py            # tìm TELEGRAM_CHAT_ID sau khi nhắn /start cho bo
 | `analyze.py` | Danh mục nóng/nguội, chain hút stablecoin, dự án chưa có token, "nóng bền" |
 | `insight.py` | Claude Haiku viết nhận định, chặn số bịa |
 | `report.py` | Bản tin Markdown EN/VI + tin Nguồn |
+| `chart.py` | Ảnh 1200×675 phí 7 ngày theo danh mục (đăng X được) |
 | `notify.py` | Gửi Telegram |
 | `main.py` | Ghép tất cả; nguồn lỗi thì gửi báo lỗi thay vì bản tin |

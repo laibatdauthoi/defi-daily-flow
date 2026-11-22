@@ -153,6 +153,8 @@ def analyze(con, day=None):
         "market": {"fees_7d": f7, "fees_pct": pct(f7, fp),
                    "stables": st, "stables_delta": st - st_ago, "stables_pct": pct(st, st_ago)},
         "hot": hot, "cold": cold,
+        "categories": [{k: c[k] for k in ("category", "fees_7d", "fees_prev_7d", "fees_pct")}
+                       for c in ranked],          # every comparable category, for the chart
         "stables_in": inflow, "stables_out": outflow,
         "no_token": no_token_risers(con, day),
     }
