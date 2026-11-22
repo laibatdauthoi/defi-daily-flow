@@ -15,7 +15,7 @@ python notify.py            # tìm TELEGRAM_CHAT_ID sau khi nhắn /start cho bo
 
 ## Chạy tự động (GitHub Actions)
 
-- Lịch: `.github/workflows/daily.yml`, 01:17 UTC (08:17 giờ VN). Chạy tay: tab Actions → daily-report → Run workflow.
+- Lịch: `.github/workflows/daily.yml`, 00:00 UTC (07:00 giờ VN), GitHub thường chạy trễ vài phút đến vài chục phút. Chạy tay: tab Actions → daily-report → Run workflow.
 - Bí mật: Settings → Secrets and variables → Actions: `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
 - Lịch sử SQLite nằm ở branch `data` (một commit, ghi đè mỗi ngày).
 
