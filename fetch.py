@@ -5,7 +5,7 @@ can report the error instead of sending wrong numbers.
 """
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -15,6 +15,7 @@ CHAIN_HISTORY_TOP_N = 30          # chains whose TVL 7d-ago we look up
 KEEP_TVL = 10e6                   # keep protocol row if TVL >= 10M ...
 KEEP_FEES_7D = 50e3               # ... or 7-day fees >= 50k
 WEEK = 7 * 86400
+VN_TZ = timezone(timedelta(hours=7))
 
 
 class DataError(Exception):
@@ -181,7 +182,7 @@ def build_snapshot():
         })
 
     snap = {
-        "day": fetched_at.strftime("%Y-%m-%d"),
+        "day": fetched_at.astimezone(VN_TZ).strftime("%Y-%m-%d"),  # report date as read in Vietnam
         "fetched_at": fetched_at.isoformat(timespec="seconds"),
         "n_protocols": len(protocols),
         "n_fee_protocols": len(fee_protocols),
