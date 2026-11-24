@@ -1,7 +1,7 @@
 """Daily report, one self-contained version per language.
 
-English is Markdown with [+] bullets; Vietnamese is plain text (no #, **, _)
-with - bullets. Each is sent inside a Telegram code block for a one-tap Copy.
+No ** or _ markers. English keeps # headings and uses [+] bullets;
+Vietnamese has no # and uses - bullets. Each is sent inside a Telegram code block for a one-tap Copy.
 """
 from datetime import datetime, timedelta, timezone
 from html import escape
@@ -56,11 +56,6 @@ def proto_url(slug):
     return f"{SITE}/protocol/{quote(slug)}"
 
 
-def md_text(s):
-    """Escape characters that would break Markdown inside names like trade[XYZ]."""
-    return s.replace("[", "\\[").replace("]", "\\]").replace("*", "\\*").replace("_", "\\_")
-
-
 def links(r):
     cats, chains, protos = {}, {}, {}
     for c in r["hot"] + r["cold"]:
@@ -74,59 +69,17 @@ def links(r):
     return cats, chains, protos
 
 
-def markdown(r, lang, insight=None, insight_note=None):
-    """English version: Markdown, with [+] as the bullet."""
-    t, p, m = T[lang], r["prices"], r["market"]
-    L = [f"# 📡 DeFi Daily Flow · {_date(r, lang)}", f"_{t['subtitle']}_", ""]
-    L.append(f"**{t['prices']}:** BTC {sp(p['BTC']['pct'])} · ETH {sp(p['ETH']['pct'])}  ")
-    L.append(f"**{t['market']}:** {t['fees']} {usd(m['fees_7d'])} ({sp(m['fees_pct'])}) · "
-             f"{t['stables']} {usd(m['stables'])} ({sd(m['stables_delta'])})")
-
-    def dom(c):
-        return f" _({t['mostly']} {md_text(c['dominated_by'])})_" if c["dominated_by"] else ""
-
-    def tvl(c):
-        return f", TVL {sp(c['tvl_pct'])}" if c["tvl_pct"] is not None else ""
-
-    L += ["", f"## {t['hot']}", f"_{t['hot_note']}_", ""]
-    if not r["hot"]:
-        L.append(f"_{t['none']}_")
-    for c in r["hot"]:
-        tag = f" · 🏆 **{t['durable']} {c['streak']} {t['days']}**" if c["durable"] else ""
-        L.append(f"[+] **{md_text(c['category'])}**: {t['fees']} {usd(c['fees_7d'])} **{sp(c['fees_pct'])}**"
-                 f"{tvl(c)}{tag}{dom(c)}")
-        L += [f"    [+] {md_text(x['name'])}: {sp(x['fees_pct'])} ({sd(x['fees_delta'])})" for x in c["leaders"]]
-
-    L += ["", f"## {t['cold']}", ""]
-    L += [f"[+] **{md_text(c['category'])}**: {t['fees']} {sp(c['fees_pct'])}{tvl(c)}{dom(c)}"
-          for c in r["cold"]] or [f"_{t['none']}_"]
-
-    L += ["", f"## {t['flows']}", ""]
-    L += [f"[+] {t['in']}: **{c['chain']}** {sd(c['stables_delta'])} ({sp(c['stables_pct'])})" for c in r["stables_in"]]
-    L += [f"[+] {t['out']}: **{c['chain']}** {sd(c['stables_delta'])} ({sp(c['stables_pct'])})" for c in r["stables_out"]]
-
-    L += ["", f"## {t['notoken']}", ""]
-    L += [f"[+] **{md_text(x['name'])}** ({x['category']}): TVL {usd(x['tvl'])} {sp(x['tvl_change_7d'])} "
-          f"({sd(x['tvl_delta'])})" for x in r["no_token"]] or [f"_{t['none']}_"]
-
-    L += ["", f"## {t['insight']}", f"_{t['insight_note']}_", ""]
-    if insight:
-        L += [f"{i}. {s}" for i, s in enumerate(getattr(insight, lang), 1)]
-    else:
-        L.append(f"_{t['no_insight']}: {md_text((insight_note or '')[:150])}_")
-
-    fetched, vn = _times(r)
-    when = (f"{fetched.strftime('%Y-%m-%d %H:%M')} UTC" if lang == "en"
-            else f"{vn.strftime('%Y-%m-%d %H:%M')} {t['vn']}")
-    L += ["", f"_{t['fetched']} {when} · DeFiLlama_"]
-    L.append(f"_{t['disclaimer']}_")
-    return "\n".join(L)
+# Per-language text style: (title prefix, section prefix, bullet, sub-bullet).
+# No ** or _ anywhere, so the text pastes as-is.
+STYLE = {"en": ("# ", "## ", "[+] ", "    [+] "),
+         "vi": ("", "", "- ", "  - ")}
 
 
 def plain(r, lang, insight=None, insight_note=None):
-    """Vietnamese version: plain text (no #, **, _), with - as the bullet."""
+    """One language's report as plain text in that language's STYLE."""
     t, p, m = T[lang], r["prices"], r["market"]
-    L = [f"📡 DeFi Daily Flow · {_date(r, lang)}", t["subtitle"], ""]
+    h1, h2, b, sb = STYLE[lang]
+    L = [f"{h1}📡 DeFi Daily Flow · {_date(r, lang)}", t["subtitle"], ""]
     L.append(f"{t['prices']}: BTC {sp(p['BTC']['pct'])} · ETH {sp(p['ETH']['pct'])}")
     L.append(f"{t['market']}: {t['fees']} {usd(m['fees_7d'])} ({sp(m['fees_pct'])}) · "
              f"{t['stables']} {usd(m['stables'])} ({sd(m['stables_delta'])})")
@@ -137,28 +90,28 @@ def plain(r, lang, insight=None, insight_note=None):
     def tvl(c):
         return f", TVL {sp(c['tvl_pct'])}" if c["tvl_pct"] is not None else ""
 
-    L += ["", t["hot"], f"({t['hot_note']})"]
+    L += ["", h2 + t["hot"], f"({t['hot_note']})"]
     if not r["hot"]:
         L.append(t["none"])
     for c in r["hot"]:
         tag = f" · 🏆 {t['durable']} {c['streak']} {t['days']}" if c["durable"] else ""
-        L.append(f"- {c['category']}: {t['fees']} {usd(c['fees_7d'])} {sp(c['fees_pct'])}"
+        L.append(f"{b}{c['category']}: {t['fees']} {usd(c['fees_7d'])} {sp(c['fees_pct'])}"
                  f"{tvl(c)}{tag}{dom(c)}")
-        L += [f"  - {x['name']}: {sp(x['fees_pct'])} ({sd(x['fees_delta'])})" for x in c["leaders"]]
+        L += [f"{sb}{x['name']}: {sp(x['fees_pct'])} ({sd(x['fees_delta'])})" for x in c["leaders"]]
 
-    L += ["", t["cold"]]
-    L += [f"- {c['category']}: {t['fees']} {sp(c['fees_pct'])}{tvl(c)}{dom(c)}"
+    L += ["", h2 + t["cold"]]
+    L += [f"{b}{c['category']}: {t['fees']} {sp(c['fees_pct'])}{tvl(c)}{dom(c)}"
           for c in r["cold"]] or [t["none"]]
 
-    L += ["", t["flows"]]
-    L += [f"- {t['in']}: {c['chain']} {sd(c['stables_delta'])} ({sp(c['stables_pct'])})" for c in r["stables_in"]]
-    L += [f"- {t['out']}: {c['chain']} {sd(c['stables_delta'])} ({sp(c['stables_pct'])})" for c in r["stables_out"]]
+    L += ["", h2 + t["flows"]]
+    L += [f"{b}{t['in']}: {c['chain']} {sd(c['stables_delta'])} ({sp(c['stables_pct'])})" for c in r["stables_in"]]
+    L += [f"{b}{t['out']}: {c['chain']} {sd(c['stables_delta'])} ({sp(c['stables_pct'])})" for c in r["stables_out"]]
 
-    L += ["", t["notoken"]]
-    L += [f"- {x['name']} ({x['category']}): TVL {usd(x['tvl'])} {sp(x['tvl_change_7d'])} "
+    L += ["", h2 + t["notoken"]]
+    L += [f"{b}{x['name']} ({x['category']}): TVL {usd(x['tvl'])} {sp(x['tvl_change_7d'])} "
           f"({sd(x['tvl_delta'])})" for x in r["no_token"]] or [t["none"]]
 
-    L += ["", t["insight"], f"({t['insight_note']})"]
+    L += ["", h2 + t["insight"], f"({t['insight_note']})"]
     if insight:
         L += [f"{i}. {s}" for i, s in enumerate(getattr(insight, lang), 1)]
     else:
@@ -211,11 +164,10 @@ def _code_blocks(text, lang="text", limit=TG_LIMIT - 200):
 
 
 def build_messages(r, insight=None, insight_note=None):
-    """EN Markdown block, VI plain-text block (both copyable), then clickable Sources."""
+    """EN block, VI block (both copyable), then clickable Sources."""
     out = []
     for lang, flag in (("en", "🇬🇧 English"), ("vi", "🇻🇳 Tiếng Việt")):
-        blocks = (_code_blocks(markdown(r, lang, insight, insight_note), "markdown") if lang == "en"
-                  else _code_blocks(plain(r, lang, insight, insight_note)))
+        blocks = _code_blocks(plain(r, lang, insight, insight_note))
         blocks[0] = f"<b>{flag}</b> · DeFi Daily Flow {_date(r, lang)}\n" + blocks[0]
         out += blocks
     return out + [sources_message(r)]
